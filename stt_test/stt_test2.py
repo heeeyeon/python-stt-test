@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 def run_quickstart():
     # [START speech_quickstart]
     import io
@@ -23,9 +22,6 @@ def run_quickstart():
     # Imports the Google Cloud client library
     # [START migration_import]
     from google.cloud import speech
-    # google-cloud-speech가 2.0.0으로 업그레이드 되면서 이제 더이상 enums, types를 사용하지 않는다. speech로 모두 대체됨
-    # from google.cloud.speech import enums
-    # from google.cloud.speech import types
     # [END migration_import]
 
     # Instantiates a client
@@ -33,31 +29,26 @@ def run_quickstart():
     client = speech.SpeechClient()
     # [END migration_client]
 
-    # The name of the audio file to transcribe
-    file_name = os.path.join(
-        os.path.dirname(__file__),
-        '.',
-        'voice1.wav')
+    # Google Cloud Storage URI where the audio file is stored
+    gcs_uri = "gs://stt-bucket-gwangju-kd3/voice4.wav"
 
-    # Loads the audio into memory
-    with io.open(file_name, 'rb') as audio_file:
-        content = audio_file.read()
-        audio = speech.RecognitionAudio(content=content)
+    audio = speech.RecognitionAudio(uri=gcs_uri)
 
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=16000,
-        language_code='ko-KR')
-
-    # Detects speech in the audio file
-    response = client.recognize(
-        request={"config": config, "audio": audio}
+        language_code='ko-KR'
     )
+
+    # Asynchronously recognize the audio
+    operation = client.long_running_recognize(config=config, audio=audio)
+
+    print("Waiting for operation to complete...")
+    response = operation.result(timeout=1800)
 
     for result in response.results:
         print('Transcript: {}'.format(result.alternatives[0].transcript))
     # [END speech_quickstart]
-
 
 if __name__ == '__main__':
     run_quickstart()
